@@ -5,7 +5,7 @@ clc
 
 testlength = 13;
 hidden_layer_size = 20;
-testruns = 10;
+testruns = 5;
 mulist = zeros(testlength,1);
 mu     = 1e-8;
 for i = 1:length(mulist)
@@ -30,13 +30,35 @@ for i = 1:length(mulist)
     elist(i)   = e_mse;
     itslist(i) = its;
 end
-
-% Determine best mu to start with
-
-
-%% 
-%semilogy(elist);
+% 
+semilogy(elist);
 loglog(mulist,elist);
+
+%%
+% Determine best mu to start with
+[min,idx] = min(elist);
+mu_min = mulist(idx);
+elist_neurons   = zeros(testlength,1);
+itslist_neurons = zeros(testlength,1);
+neurons = [1:1:150];
+for i = 1:length(neurons)
+    hidden_layer_size = neurons(i);
+    etotal   = 0;
+    itstotal = 0;
+    for j = 1:testruns
+        [e,its,yRBF] = levenberg(mu_min,hidden_layer_size);
+        while mse(e) > 0.03
+            % Only use the runs that converged properly
+            [e,its,yRBF] = levenberg(mu_min,hidden_layer_size);
+        end
+        etotal = etotal + mse(e);
+        itstotal = itstotal + its;
+    end
+    elist_neurons(i)   = etotal/testruns;
+    itslist_neurons(i) = itstotal/testruns;
+    disp(i);
+end
+
 
 
 
