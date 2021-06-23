@@ -1,0 +1,30 @@
+clear all
+close all
+clc
+
+
+testlength = 13;
+hidden_layer_size = 20;
+testruns = 10;
+mulist = zeros(testlength,1);
+mu     = 1e-8;
+for i = 1:length(mulist)
+    mulist(i) = mu;
+    mu = mu*10;
+end
+
+elist = zeros(testlength,1);
+for i = 1:length(mulist)
+    mu = mulist(i);
+    etotal = 0;
+    for j = 1:testruns
+        [e,its,yRBF] = levenberg(mu,hidden_layer_size);
+        e_mse = mse(e);
+        etotal = etotal + e_mse;
+    end
+    e_mse = etotal/10;
+    elist(i) = e_mse;
+end
+%% 
+semilogy(elist);
+loglog(
