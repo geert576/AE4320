@@ -20,14 +20,16 @@ for i = 1:length(mulist)
     etotal   = 0;
     itstotal = 0;
     for j = 1:testruns
-        [e,its,yRBF] = levenberg(mu,hidden_layer_size);
-        e_mse = mse(e);
+        [e,its,yRBF,~] = levenberg(mu,hidden_layer_size);
+        e_mse = mse(e.test);
+        
         etotal   = etotal + e_mse;
         itstotal = itstotal + its;
     end
+    
     e_mse = etotal/testruns;
     its   = itstotal/testruns;
-    elist(i)   = e_mse;
+    elist(i) = e_mse;
     itslist(i) = its;
 end
 % 
@@ -45,16 +47,22 @@ for i = 1:length(neurons)
     hidden_layer_size = neurons(i);
     etotal   = 0;
     itstotal = 0;
+    lowest = 1;
     for j = 1:testruns
-        [e,its,yRBF] = levenberg(mu_min,hidden_layer_size);
-        while mse(e) > 0.03
+        [e,its,yRBF,~] = levenberg(mu_min,hidden_layer_size);
+        while mse(e.test) > 0.03
             % Only use the runs that converged properly
             [e,its,yRBF] = levenberg(mu_min,hidden_layer_size);
         end
-        etotal = etotal + mse(e);
+        e_mse = mse(e.test);
+%         etotal = etotal + mse(e);
         itstotal = itstotal + its;
+        if e_mse < lowest
+            lowest = e_mse;
+        end
     end
-    elist_neurons(i)   = etotal/testruns;
+%     elist_neurons(i)   = etotal/testruns;
+    elist(i)   = lowest;
     itslist_neurons(i) = itstotal/testruns;
     disp(i);
 end

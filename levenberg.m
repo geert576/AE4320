@@ -1,4 +1,4 @@
-function [e,its,yRBF] = levenberg(mu,hidden_layer_size)
+function [e,its,yRBF,F16_RBF,Z_k] = levenberg(mu,hidden_layer_size)
 load('F16traindata_CMabV_2021.mat', 'Cm', 'Z_k', 'U_k');
 F16_RBF = [];
 
@@ -52,9 +52,9 @@ for epoch = 1:F16_RBF.epochs
 
    % calc new W
     wold = reshape(wold,1,7*hidden_layer_size);
-    %wnew = wold - reshape(((J'*J+ mu*eye(size(J'*J)))\(J'*eold'))',7,20)';
-    wnew = wold - ((J'*J+ mu*eye(size(J'*J)))\(J'*eold'))';
-%     wnew = wold - (inv((J'*J + mu*eye(length(J'*J))))*(J'*eold'))';
+
+    wnew = wold - (pinv(J'*J+ mu*eye(size(J'*J)))*(J'*eold'))';
+
     wnew = reshape(wnew,hidden_layer_size,7);
     wold = reshape(wold,hidden_layer_size,7);
     F16_RBF.IW = wnew(:,1:3);
@@ -81,7 +81,7 @@ for epoch = 1:F16_RBF.epochs
         F16_RBF.centers = wold(:,5:7);
         yRBF    = simNet(F16_RBF,Z_kt');
     end
-    E1 = 0.5*sum(enew.^2)/size(enew,2);
+    E1 = size(enew,2)\0.5*sum(enew.^2);
     errorlist(epoch) = E1;
     e_grad = gradient(errorlist(1:epoch));
     if mu >= mu_max 
@@ -99,12 +99,10 @@ for epoch = 1:F16_RBF.epochs
     end
 end
 its = epoch;
+e.train = Ytrain' - yRBF.Y2;
 yRBF_test = simNet(F16_RBF,Xtest');
-e = Ytest' - yRBF_test.Y2;
-disp(mse(e))
+e.test = Ytest' - yRBF_test.Y2;
+disp(mse(e.test))
 end
-% %% Plotting
-% figure(3)
-% plot(errorlist);
-% plotting(F16_RBF,Z_k);
+
 
