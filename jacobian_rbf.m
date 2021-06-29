@@ -1,6 +1,6 @@
 %% Calculate the jacobian for the levenberg algorithm
 
-function J = jacobian_w(w,e,x,output,net)
+function J = jacobian_rbf(w,e,x,output,net)
 w_in    = w(:,1:3);
 w_out   = w(:,4);
 centers = w(:,5:7);

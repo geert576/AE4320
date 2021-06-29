@@ -70,7 +70,9 @@ if nargin == 2
     output.Y2 = Y2;
     output.Y1 = Y1;
     output.V1 = V1;
-    output.LS = row;
+    if strcmp(net.name{1,1},'rbf')
+        output.LS = row;
+    end
 elseif nargin == 3
     output.Y2 = Y2;
     output.Y1 = Y1;
