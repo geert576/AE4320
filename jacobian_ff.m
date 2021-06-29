@@ -3,7 +3,7 @@
 function J = jacobian_ff(w,e,x,output,net)
 w_in    = w(:,1:3);
 w_out   = w(:,4);
-centers = w(:,5:7);
+
 
 J = zeros(numel(e),numel(w));
 
@@ -31,22 +31,19 @@ dvkdyj = w_out;
 % Dependencies of hidden layer activation function yj wrt to vj
 % dyj/dvj
 
-dyjdvj = -output.Y1;
+dyjdvj = (4*exp(-2*output.V1))./(1+exp(-2*output.V1)).^2;
 
 % Dependencies wrt input weights
 % dE/dwij
 % TODO iterate over inputs to get 3 columns of weights in
 neurons = size(w_in,1);
+
 for i = 1:size(w_in,2)
     % Input weights
-    dvdwij = 2*w_in(:,i).*(x(i,:)-centers(:,i)).^2;
-    J(:,((i-1)*neurons+1):i*neurons) = (dEdyk * dykdvk .* dvkdyj .* dyjdvj .* dvdwij)';
+    dvjdwij    = x(:,i);
+    J(:,((i-1)*neurons+1):i*neurons) = (dEdyk*dykdvk.*dvkdyj.*dyjdvj.*dvjdwij')';
     %J(:,((i-1)*neurons+1):i*neurons) = (dEdyk .* (dykdvk * dvkdyj .* dyjdvj .* dvdwij))';
     %J(:,((i-1)*neurons+1):i*neurons) = dEdyk * dykdvk * output.Y1' .* dyjdvj .* dvdwij;
-    
-    % Centers
-    dvjcij = -2*(w_in(:,i).^2).*(x(i,:)-centers(:,i));
-    J(:,((i+3)*neurons+1):(i+4)*neurons) = (dEdyk * dykdvk .* dvkdyj .* dyjdvj .* dvjcij)';
 end
 
 % Output weights
