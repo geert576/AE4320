@@ -10,6 +10,7 @@ beta  = Xtrain(:,2);
 V     = Xtrain(:,3);
 Z_kn  = Ytrain;
 Z_k   = cat(1,Xtrain,Xtest);
+
 % Init
 weight_output = randn(1);
 alpha_w   = randn(1)*ones(hidden_layer_size,1);
@@ -40,6 +41,9 @@ wold      = cat(2,w_init_in,w_init_output');
 e         = mse(eold);
 errorlist = 100*ones(F16_FF.epochs,1);
 mse_init  = e; 
+adapt_rate = 10;
+mu_max     = 5e30;
+mu_min     = 5e-10;
 for epoch =1:F16_FF.epochs
     
     if method == 0
@@ -64,9 +68,9 @@ for epoch =1:F16_FF.epochs
         F16_FF.IW = wnew(:,1:3);
         F16_FF.LW = wnew(:,4)';
         yFF    = simNet(F16_FF,Xtrain');
-        enew    = Cmt'- yFF.Y2;
+        enew    = Ytrain'- yFF.Y2;
         E1 = mse(enew);
-
+        E  = mse(eold);
         % If new error is smaller, adapt changes, increase mu
         if E > E1 && F16_FF.mu < mu_max
             F16_FF.mu = F16_FF.mu*adapt_rate;
@@ -78,8 +82,7 @@ for epoch =1:F16_FF.epochs
             F16_FF.mu      = F16_FF.mu/adapt_rate;
             F16_FF.IW      = wold(:,1:3);
             F16_FF.LW      = wold(:,4)';
-            F16_FF.centers = wold(:,5:7);
-            yFF            = simNet(F16_FF,Z_kt');
+            yFF            = simNet(F16_FF,Xtrain');
         end
     end
     % disp(mse(eold));

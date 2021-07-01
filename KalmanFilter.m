@@ -18,7 +18,7 @@ dt          = 0.01;     % time step (s)
 N           = length(Cm);     % sample size
 T           = linspace(0,dt*N,N);
 epsilon         = 1e-10;
-doIEKF          = 1;        % set 1 for IEKF and 0 for EKF
+doIEKF          = 0;        % set 1 for IEKF and 0 for EKF
 maxIterations   = 100;
 
 printfigs   = 0;
@@ -111,7 +111,7 @@ G               = [1 0 0 0;
                    0 0 0 0];
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Run the Extended Kalman filter
+% Run the Iterated Extended Kalman filter
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 tic; % start timer
 
@@ -189,19 +189,6 @@ for k = 1:N
         % Calculate optimal state x(k+1|k+1) 
         x_k1_k1         = x_k1_k + K*(Z_k(k,:)' - z_k1_k); 
     end    
-    % Correction
-    % Hx              = kf_calc_Hx(0, x_k1_k, U_k(k,:)); % perturbation of h(x,u,t)
-    
-    % Observation and observation error predictions
-    % z_k1_k          = kf_calc_h(0, x_k1_k, U_k(k,:));     % prediction of observation 
-    % P_zz            = (Hx*P_k1_k * Hx.' + R);           % covariance matrix of observation error
-    % std_z           = sqrt(diag(P_zz));                 % standard deviation of observation error (for validation)        
-
-    % K(k+1) (gain)
-    % K               = P_k1_k * Hx.'/P_zz;
-    
-    % Calculate optimal state x(k+1|k+1) 
-    % x_k1_k1         = x_k1_k + K * (Z_k(k,:)' - z_k1_k); 
 
     % P(k+1|k+1) (correction) using the numerically stable form of P_k_1k_1 = (eye(n) - K*Hx) * P_kk_1; 
     P_k1_k1         = (eye(n) - K*Hx) * P_k1_k * (eye(n) - K*Hx).' + K*R*K.';  
@@ -279,90 +266,99 @@ a_true = a_m./(1+c_a);
 
 plotID = 1003;
 figure(plotID);
-% set(plotID, 'Position', [600 425 600 400], 'defaultaxesfontsize', 10, 'defaulttextfontsize', 10, 'PaperPositionMode', 'auto');
 hold on;
 grid on;
-% plot(X_k, 'b');
+title('Measured vs estimated state');
 subplot(3,1,1);
 plot(T,Z_k(:,1), 'k.',T,ZZ_pred(1,:), 'r',T,a_true,'b');
+legend( 'Measurement', 'Estimated state','True state', 'Location', 'northeast');
+ylabel('\alpha_{m}, \alpha_{true} [rad]');
 subplot(3,1,2);
 plot(T,Z_k(:,2), 'k.',T,ZZ_pred(2,:), 'r');
+legend( 'Measurement', 'Estimated state', 'Location', 'northeast');
+ylabel('\beta_{m} [rad]');
 subplot(3,1,3);
 plot(T,Z_k(:,3), 'k.',T,ZZ_pred(3,:), 'r');
-title('True state, estimated state and measurement');
-legend( 'Measurement', 'Estimated state', 'Location', 'northeast');
-if (printfigs == 1)
-    name       = "TrueStateEstimatedStateMeasurement";
-    savefname  = strcat(figpath,"fig_",mfilename, "_", name);
-    print(plotID, '-dpng', '-r300', savefname);
-end
+legend('Measurement', 'Estimated state', 'Location', 'northeast');
+ylabel('V_{m} [m/s]');
+saveas(gcf,'observation','epsc')
+% if (printfigs == 1)
+%     name       = "TrueStateEstimatedStateMeasurement";
+%     savefname  = strcat(figpath,"fig_",mfilename, "_", name);
+%     print(plotID, '-dpng', '-r300', savefname);
+% end
 
-pause;
+figure(1004);
+plot(T,c_a);
+title('Estimation of C_{\alpha_{up}}')
+ylabel('C_{\alpha_{up}} [-]');
+xlabel('Time (s)');
+saveas(gcf,'calphaup','epsc')
 
-plotID = 2001;
-figure(plotID);
-set(plotID, 'Position', [600 425 600 400], 'defaultaxesfontsize', 10, 'defaulttextfontsize', 10, 'PaperPositionMode', 'auto');
-hold on;
-grid on;
-% plot(EstErr_x, 'b');
-plot(STD_x_cor, 'r');
-plot(-STD_x_cor, 'g');
-legend('Estimation error', 'Upper error STD', 'Lower error STD', 'Location', 'northeast');
-title('State estimation error with STD');
-if (printfigs == 1)
-    name       = "StateEstimationError";
-    savefname  = strcat(figpath,"fig_",mfilename, "_", name);
-    print(plotID, '-dpng', '-r300', savefname);
-end
+% plotID = 2001;
+% figure(plotID);
+% set(plotID, 'Position', [600 425 600 400], 'defaultaxesfontsize', 10, 'defaulttextfontsize', 10, 'PaperPositionMode', 'auto');
+% hold on;
+% grid on;
+% % plot(EstErr_x, 'b');
+% plot(STD_x_cor, 'r');
+% plot(-STD_x_cor, 'g');
+% legend('Estimation error', 'Upper error STD', 'Lower error STD', 'Location', 'northeast');
+% title('State estimation error with STD');
+% if (printfigs == 1)
+%     name       = "StateEstimationError";
+%     savefname  = strcat(figpath,"fig_",mfilename, "_", name);
+%     print(plotID, '-dpng', '-r300', savefname);
+% end
 
-plotID = 2002;
-figure(plotID);
-set(plotID, 'Position', [600 0 600 400], 'defaultaxesfontsize', 10, 'defaulttextfontsize', 10, 'PaperPositionMode', 'auto');
-hold on;
-grid on;
-% plot(EstErr_x, 'b');
-plot(STD_x_cor, 'r');
-plot(-STD_x_cor, 'g');
-% axis([0 50 min(EstErr_x) max(EstErr_x)]);
-title('State estimation error with STD (zoomed in)');
-legend('Estimation error', 'Upper error STD', 'Lower error STD', 'Location', 'northeast');
-if (printfigs == 1)
-    name       = "StateEstimationErrorZoom";
-    savefname  = strcat(figpath,"fig_",mfilename, "_", name);
-    print(plotID, '-dpng', '-r300', savefname);
-end
+% plotID = 2002;
+% figure(plotID);
+% set(plotID, 'Position', [600 0 600 400], 'defaultaxesfontsize', 10, 'defaulttextfontsize', 10, 'PaperPositionMode', 'auto');
+% hold on;
+% grid on;
+% % plot(EstErr_x, 'b');
+% plot(STD_x_cor, 'r');
+% plot(-STD_x_cor, 'g');
+% % axis([0 50 min(EstErr_x) max(EstErr_x)]);
+% title('State estimation error with STD (zoomed in)');
+% legend('Estimation error', 'Upper error STD', 'Lower error STD', 'Location', 'northeast');
+% if (printfigs == 1)
+%     name       = "StateEstimationErrorZoom";
+%     savefname  = strcat(figpath,"fig_",mfilename, "_", name);
+%     print(plotID, '-dpng', '-r300', savefname);
+% end
 
-pause;
+% pause;
 
-plotID = 3001;
-figure(plotID);
-set(plotID, 'Position', [600 425 600 400], 'defaultaxesfontsize', 10, 'defaulttextfontsize', 10, 'PaperPositionMode', 'auto');
-hold on;
-grid on;
-plot(EstErr_z, 'b');
-plot(STD_z, 'r');
-plot(-STD_z, 'g');
-legend('Measurement estimation error', 'Upper error STD', 'Lower error STD', 'Location', 'northeast');
-title('Measurement estimation error with STD');
-if (printfigs == 1)
-    name       = "MeasurementEstimationError";
-    savefname  = strcat(figpath,"fig_",mfilename, "_", name);
-    print(plotID, '-dpng', '-r300', savefname);
-end
-
-plotID = 3002;
-figure(plotID);
-set(plotID, 'Position', [600 0 600 400], 'defaultaxesfontsize', 10, 'defaulttextfontsize', 10, 'PaperPositionMode', 'auto');
-hold on;
-grid on;
-plot(EstErr_z, 'b');
-plot(STD_z, 'r');
-plot(-STD_z, 'g');
-axis([0 50 min(EstErr_z) max(EstErr_z)]);
-title('Measurement estimation error with STD (zoomed in)');
-legend('Measurement estimation error', 'Upper error STD', 'Lower error STD', 'Location', 'northeast');
-if (printfigs == 1)
-    name       = "MeasurementEstimationErrorZoom";
-    savefname  = strcat(figpath,"fig_",mfilename, "_", name);
-    print(plotID, '-dpng', '-r300', savefname);
-end
+% plotID = 3001;
+% figure(plotID);
+% set(plotID, 'Position', [600 425 600 400], 'defaultaxesfontsize', 10, 'defaulttextfontsize', 10, 'PaperPositionMode', 'auto');
+% hold on;
+% grid on;
+% plot(EstErr_z, 'b');
+% plot(STD_z, 'r');
+% plot(-STD_z, 'g');
+% legend('Measurement estimation error', 'Upper error STD', 'Lower error STD', 'Location', 'northeast');
+% title('Measurement estimation error with STD');
+% if (printfigs == 1)
+%     name       = "MeasurementEstimationError";
+%     savefname  = strcat(figpath,"fig_",mfilename, "_", name);
+%     print(plotID, '-dpng', '-r300', savefname);
+% end
+% 
+% plotID = 3002;
+% figure(plotID);
+% set(plotID, 'Position', [600 0 600 400], 'defaultaxesfontsize', 10, 'defaulttextfontsize', 10, 'PaperPositionMode', 'auto');
+% hold on;
+% grid on;
+% plot(EstErr_z, 'b');
+% plot(STD_z, 'r');
+% plot(-STD_z, 'g');
+% axis([0 50 min(EstErr_z) max(EstErr_z)]);
+% title('Measurement estimation error with STD (zoomed in)');
+% legend('Measurement estimation error', 'Upper error STD', 'Lower error STD', 'Location', 'northeast');
+% if (printfigs == 1)
+%     name       = "MeasurementEstimationErrorZoom";
+%     savefname  = strcat(figpath,"fig_",mfilename, "_", name);
+%     print(plotID, '-dpng', '-r300', savefname);
+% end
